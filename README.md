@@ -7,6 +7,11 @@ Its profile is the authoritative source of truth. OpenClaw and DefenseClaw
 configuration will eventually be generated downstream from a PVClaw profile;
 users should not need to maintain three independent configuration systems.
 
+## Requirements
+PVCLaw is currently developed and test against:
+  - Openclaw 2026.9.3
+  - Defenseclaw version 0.8.10
+
 ## Current milestone
 
 PVClaw validates Profile V1 YAML, compiles it into in-memory desired state,
