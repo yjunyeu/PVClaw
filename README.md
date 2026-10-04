@@ -8,7 +8,7 @@ configuration will eventually be generated downstream from a PVClaw profile;
 users should not need to maintain three independent configuration systems.
 
 ## Requirements
-PVCLaw is currently developed and test against:
+PVCLaw is currently developed and tested against:
   - Openclaw 2026.9.3
   - Defenseclaw version 0.8.10
 
