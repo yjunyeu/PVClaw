@@ -1,0 +1,21 @@
+version: 1
+
+agent:
+  id: medical
+  name: Medical Agent
+  purpose: medical
+
+data:
+  access: read-only
+
+network:
+  enabled: false
+
+capabilities:
+  shell: false
+  web_search: false
+  browser: false
+  simulated_messaging: false
+
+policy:
+  profile: medical

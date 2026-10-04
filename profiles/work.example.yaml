@@ -1,0 +1,21 @@
+version: 1
+
+agent:
+  id: work
+  name: Work Agent
+  purpose: work
+
+data:
+  access: read-write
+
+network:
+  enabled: true
+
+capabilities:
+  shell: true
+  web_search: true
+  browser: true
+  simulated_messaging: false
+
+policy:
+  profile: work
