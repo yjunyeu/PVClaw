@@ -62,7 +62,7 @@ func runCreate(args []string, stdout, stderr io.Writer) int {
 		fmt.Fprintf(stderr, "error: %v\n", err)
 		return 1
 	}
-	fmt.Fprintf(stdout, "Created PVClaw agent %s\n  Profile: %s\n  Data directory: %s\n", agentID, paths.ProfilePath, paths.DataDirectory)
+	fmt.Fprintf(stdout, "Created PVClaw agent %s\n  Profile: %s\n  Data directory: %s\n  Workspace directory: %s\n", agentID, paths.ProfilePath, paths.DataDirectory, paths.WorkspaceDirectory)
 	return 0
 }
 

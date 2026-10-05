@@ -55,7 +55,7 @@ func (r Reconciler) Apply(ctx context.Context, agentID string) (ApplyResult, err
 	result := ApplyResult{Diff: initial}
 
 	if !actual.Exists {
-		if err := r.client().AddAgent(ctx, agentID, desired.PVClaw.DataDirectory); err != nil {
+		if err := r.client().AddAgent(ctx, agentID, desired.PVClaw.WorkspaceDirectory); err != nil {
 			return result, fmt.Errorf("create OpenClaw agent %q: %w", agentID, err)
 		}
 		result.Created = true

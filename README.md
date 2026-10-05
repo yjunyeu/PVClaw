@@ -23,9 +23,15 @@ The local profile is authoritative. For agent `medical`, PVClaw owns only:
 
 ```text
 <PVCLAW_HOME>/agents/medical/profile.yaml  # authoritative privacy intent
-<PVCLAW_HOME>/agents/medical/data/         # persistent user-owned sandbox data
+<PVCLAW_HOME>/agents/medical/data/         # persistent user-provided protected files
+<PVCLAW_HOME>/agents/medical/workspace/    # OpenClaw agent workspace/bootstrap files
 <PVCLAW_HOME>/agents/medical/state.json    # derived apply metadata, never input config
 ```
+
+`data/` holds domain-specific protected files and is bind-mounted inside the
+sandbox at `/data` with the profile's configured access mode. `workspace/` is
+only the OpenClaw agent workspace; OpenClaw workspace/bootstrap files must
+never be stored in `data/`.
 
 Reconciliation uses supported OpenClaw interfaces only:
 
@@ -73,8 +79,8 @@ pvclaw apply medical --yes --home /tmp/pvclaw-test
 `--home` selects the PVClaw root used for deterministic path derivation. When
 it is omitted, the CLI uses `PVCLAW_HOME`, then falls back to `~/.pvclaw`.
 
-`create` is local-only: it creates a profile and `data/` directory but never
-contacts OpenClaw. `diff` reads the local profile and OpenClaw's current
+`create` is local-only: it creates a profile, `data/`, and `workspace/`
+directories but never contacts OpenClaw. `diff` reads the local profile and OpenClaw's current
 configuration. `apply` uses the same profile to create or patch just that
 agent, verifies the sandbox, then writes `state.json` only after success.
 

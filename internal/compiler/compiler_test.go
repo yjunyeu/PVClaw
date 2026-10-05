@@ -58,6 +58,15 @@ func TestCompileProfiles(t *testing.T) {
 			if desired.OpenClaw.Sandbox.DockerNetwork != tt.network || desired.OpenClaw.Mount.ReadOnly != tt.readOnly || desired.OpenClaw.Sandbox.BrowserEnabled != tt.browser {
 				t.Fatalf("unexpected desired state: %#v", desired.OpenClaw)
 			}
+			if !desired.OpenClaw.Sandbox.AllowExternalBindSources {
+				t.Fatal("PVClaw-managed data bind must authorize its external source")
+			}
+			if desired.PVClaw.DataDirectory == desired.PVClaw.WorkspaceDirectory || desired.OpenClaw.Workspace != desired.PVClaw.WorkspaceDirectory {
+				t.Fatalf("workspace separation = %#v", desired)
+			}
+			if desired.OpenClaw.Mount.Source != desired.PVClaw.DataDirectory || desired.OpenClaw.Mount.Target != "/data" {
+				t.Fatalf("protected bind = %#v", desired.OpenClaw.Mount)
+			}
 			if !reflect.DeepEqual(desired.OpenClaw.Tools.Denied, tt.expectedDeny) {
 				t.Fatalf("denied tools = %#v, want %#v", desired.OpenClaw.Tools.Denied, tt.expectedDeny)
 			}
@@ -88,6 +97,9 @@ func TestCompileDerivesPathsFromInjectedHome(t *testing.T) {
 	}
 	if got, want := desired.PVClaw.DataDirectory, "/home/example/.pvclaw/agents/medical/data"; got != want {
 		t.Fatalf("data directory = %q, want %q", got, want)
+	}
+	if got, want := desired.PVClaw.WorkspaceDirectory, "/home/example/.pvclaw/agents/medical/workspace"; got != want {
+		t.Fatalf("workspace directory = %q, want %q", got, want)
 	}
 	if got, want := desired.PVClaw.StatePath, "/home/example/.pvclaw/agents/medical/state.json"; got != want {
 		t.Fatalf("state path = %q, want %q", got, want)

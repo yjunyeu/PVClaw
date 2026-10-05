@@ -15,16 +15,18 @@ type DesiredState struct {
 }
 
 type PVClawState struct {
-	AgentDirectory string
-	ProfilePath    string
-	DataDirectory  string
-	StatePath      string
+	AgentDirectory     string
+	ProfilePath        string
+	DataDirectory      string
+	WorkspaceDirectory string
+	StatePath          string
 }
 
 type DesiredOpenClawState struct {
 	AgentID   string
 	AgentName string
 	Purpose   string
+	Workspace string
 	Sandbox   SandboxState
 	Mount     BindMount
 	Tools     ToolPolicy
@@ -33,12 +35,13 @@ type DesiredOpenClawState struct {
 }
 
 type SandboxState struct {
-	Mode            string
-	Backend         string
-	Scope           string
-	WorkspaceAccess string
-	DockerNetwork   string
-	BrowserEnabled  bool
+	Mode                     string
+	Backend                  string
+	Scope                    string
+	WorkspaceAccess          string
+	DockerNetwork            string
+	AllowExternalBindSources bool
+	BrowserEnabled           bool
 }
 
 type BindMount struct {
@@ -81,13 +84,17 @@ func Compile(p profile.Profile, home string) (DesiredState, error) {
 			AgentID:   p.Agent.ID,
 			AgentName: p.Agent.Name,
 			Purpose:   p.Agent.Purpose,
+			Workspace: paths.WorkspaceDirectory,
 			Sandbox: SandboxState{
 				Mode:            "all",
 				Backend:         "docker",
 				Scope:           "agent",
 				WorkspaceAccess: "none",
 				DockerNetwork:   network,
-				BrowserEnabled:  p.Capabilities.Browser,
+				// PVClaw derives the bind source under its own managed agent root;
+				// profiles never provide arbitrary host paths.
+				AllowExternalBindSources: true,
+				BrowserEnabled:           p.Capabilities.Browser,
 			},
 			Mount: BindMount{
 				Source:   paths.DataDirectory,
@@ -109,10 +116,11 @@ func Compile(p profile.Profile, home string) (DesiredState, error) {
 func derivePaths(home, agentID string) PVClawState {
 	agentDirectory := filepath.Join(filepath.Clean(home), "agents", agentID)
 	return PVClawState{
-		AgentDirectory: agentDirectory,
-		ProfilePath:    filepath.Join(agentDirectory, "profile.yaml"),
-		DataDirectory:  filepath.Join(agentDirectory, "data"),
-		StatePath:      filepath.Join(agentDirectory, "state.json"),
+		AgentDirectory:     agentDirectory,
+		ProfilePath:        filepath.Join(agentDirectory, "profile.yaml"),
+		DataDirectory:      filepath.Join(agentDirectory, "data"),
+		WorkspaceDirectory: filepath.Join(agentDirectory, "workspace"),
+		StatePath:          filepath.Join(agentDirectory, "state.json"),
 	}
 }
 

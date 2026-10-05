@@ -20,6 +20,12 @@ func TestCreateScaffoldsMedicalAgent(t *testing.T) {
 	if info, err := os.Stat(paths.DataDirectory); err != nil || !info.IsDir() {
 		t.Fatalf("data directory missing or not directory: %v", err)
 	}
+	if info, err := os.Stat(paths.WorkspaceDirectory); err != nil || !info.IsDir() {
+		t.Fatalf("workspace directory missing or not directory: %v", err)
+	}
+	if paths.DataDirectory == paths.WorkspaceDirectory {
+		t.Fatal("data and workspace directories must be distinct")
+	}
 	p, _, _, err := s.LoadProfile("medical")
 	if err != nil {
 		t.Fatalf("LoadProfile() error = %v", err)
@@ -29,6 +35,22 @@ func TestCreateScaffoldsMedicalAgent(t *testing.T) {
 	}
 	if _, err := os.Stat(paths.StatePath); !errors.Is(err, os.ErrNotExist) {
 		t.Fatalf("state file should not exist before apply, stat error = %v", err)
+	}
+}
+
+func TestPathsDerivesDistinctDataAndWorkspaceDirectories(t *testing.T) {
+	paths, err := (Store{Home: "/tmp/pvclaw-test"}).Paths("medical")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, want := paths.DataDirectory, "/tmp/pvclaw-test/agents/medical/data"; got != want {
+		t.Fatalf("data directory = %q, want %q", got, want)
+	}
+	if got, want := paths.WorkspaceDirectory, "/tmp/pvclaw-test/agents/medical/workspace"; got != want {
+		t.Fatalf("workspace directory = %q, want %q", got, want)
+	}
+	if paths.DataDirectory == paths.WorkspaceDirectory {
+		t.Fatal("data and workspace directories must be distinct")
 	}
 }
 

@@ -11,18 +11,20 @@ type ActualAgentState struct {
 	Exists     bool
 	AgentID    string
 	ConfigHash string
+	Workspace  string
 	Sandbox    ActualSandboxState
 	Mount      ActualBindMount
 	Tools      ActualToolState
 }
 
 type ActualSandboxState struct {
-	Mode            string
-	Backend         string
-	Scope           string
-	WorkspaceAccess string
-	DockerNetwork   string
-	BrowserEnabled  bool
+	Mode                     string
+	Backend                  string
+	Scope                    string
+	WorkspaceAccess          string
+	DockerNetwork            string
+	AllowExternalBindSources bool
+	BrowserEnabled           bool
 }
 
 type ActualBindMount struct {
@@ -87,7 +89,7 @@ func (d Diff) NeedsCreate() bool {
 func (d Diff) NeedsSandboxRecreate() bool {
 	for _, change := range d.Changes {
 		switch change.Field {
-		case "sandbox.mode", "sandbox.backend", "sandbox.scope", "sandbox.workspace_access", "sandbox.docker.network", "sandbox.browser.enabled", "mount./data":
+		case "sandbox.mode", "sandbox.backend", "sandbox.scope", "sandbox.workspace_access", "sandbox.docker.network", "sandbox.docker.dangerously_allow_external_bind_sources", "sandbox.browser.enabled", "mount./data":
 			return true
 		}
 	}

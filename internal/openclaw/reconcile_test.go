@@ -14,6 +14,7 @@ import (
 type fakeClient struct {
 	actual          ActualAgentState
 	addCalls        int
+	addWorkspace    string
 	patchCalls      int
 	recreateCalls   int
 	explainCalls    int
@@ -26,8 +27,9 @@ func (f *fakeClient) GetAgent(_ context.Context, _ string) (ActualAgentState, er
 	return f.actual, nil
 }
 
-func (f *fakeClient) AddAgent(_ context.Context, agentID, _ string) error {
+func (f *fakeClient) AddAgent(_ context.Context, agentID, workspace string) error {
 	f.addCalls++
+	f.addWorkspace = workspace
 	f.actual = ActualAgentState{Exists: true, AgentID: agentID, ConfigHash: "created-hash"}
 	return nil
 }
@@ -85,10 +87,12 @@ func desiredMedical(t *testing.T, reconciler Reconciler) compiler.DesiredOpenCla
 func actualFor(desired compiler.DesiredOpenClawState) ActualAgentState {
 	return ActualAgentState{
 		Exists: true, AgentID: desired.AgentID, ConfigHash: "hash",
+		Workspace: desired.Workspace,
 		Sandbox: ActualSandboxState{
 			Mode: desired.Sandbox.Mode, Backend: desired.Sandbox.Backend, Scope: desired.Sandbox.Scope,
 			WorkspaceAccess: desired.Sandbox.WorkspaceAccess, DockerNetwork: desired.Sandbox.DockerNetwork,
-			BrowserEnabled: desired.Sandbox.BrowserEnabled,
+			AllowExternalBindSources: desired.Sandbox.AllowExternalBindSources,
+			BrowserEnabled:           desired.Sandbox.BrowserEnabled,
 		},
 		Mount: ActualBindMount{Found: true, Source: desired.Mount.Source, Target: desired.Mount.Target, ReadOnly: desired.Mount.ReadOnly},
 		Tools: ActualToolState{
@@ -161,11 +165,63 @@ func TestApplyCreatesMissingAgentAndWritesStateAfterSuccess(t *testing.T) {
 	if !result.Created || !result.Patched || result.Recreated || client.addCalls != 1 || client.patchCalls != 1 {
 		t.Fatalf("unexpected apply result %#v, client %#v", result, client)
 	}
+	if got, want := client.addWorkspace, paths.WorkspaceDirectory; got != want {
+		t.Fatalf("AddAgent workspace = %q, want %q", got, want)
+	}
+	if client.addWorkspace == paths.DataDirectory {
+		t.Fatal("AddAgent used protected data directory as its workspace")
+	}
 	if !client.unrelatedExists {
 		t.Fatal("unrelated OpenClaw agent was changed")
 	}
 	if _, err := os.Stat(paths.StatePath); err != nil {
 		t.Fatalf("state file was not written after success: %v", err)
+	}
+}
+
+func TestDiffReportsWorkspaceDrift(t *testing.T) {
+	reconciler, _ := medicalReconciler(t, ActualAgentState{})
+	client := reconciler.Client.(*fakeClient)
+	client.actual = actualFor(desiredMedical(t, reconciler))
+	client.actual.Workspace = "/wrong/workspace"
+	diff, err := reconciler.Diff(context.Background(), "medical")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(diff.Changes) != 1 || diff.Changes[0].Field != "workspace" {
+		t.Fatalf("workspace drift diff = %#v", diff)
+	}
+}
+
+func TestDiffReportsExternalBindSourceAuthorizationDrift(t *testing.T) {
+	reconciler, _ := medicalReconciler(t, ActualAgentState{})
+	client := reconciler.Client.(*fakeClient)
+	client.actual = actualFor(desiredMedical(t, reconciler))
+	client.actual.Sandbox.AllowExternalBindSources = false
+	diff, err := reconciler.Diff(context.Background(), "medical")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(diff.Changes) != 1 || diff.Changes[0].Field != "sandbox.docker.dangerously_allow_external_bind_sources" || diff.Changes[0].Desired != "enabled" || diff.Changes[0].Actual != "disabled" {
+		t.Fatalf("external bind source drift = %#v", diff)
+	}
+	if !diff.NeedsSandboxRecreate() {
+		t.Fatal("external bind source authorization should require sandbox recreation")
+	}
+}
+
+func TestApplyReconcilesIncorrectWorkspace(t *testing.T) {
+	reconciler, _ := medicalReconciler(t, ActualAgentState{})
+	client := reconciler.Client.(*fakeClient)
+	desired := desiredMedical(t, reconciler)
+	client.actual = actualFor(desired)
+	client.actual.Workspace = "/wrong/workspace"
+	result, err := reconciler.Apply(context.Background(), "medical")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !result.Patched || result.Recreated || client.actual.Workspace != desired.Workspace {
+		t.Fatalf("workspace reconciliation result = %#v, actual = %#v", result, client.actual)
 	}
 }
 
@@ -189,6 +245,7 @@ func TestApplyRecreatesSandboxForNetworkOrBindChanges(t *testing.T) {
 	}{
 		{"network", func(a *ActualAgentState) { a.Sandbox.DockerNetwork = "bridge" }},
 		{"bind", func(a *ActualAgentState) { a.Mount.ReadOnly = false }},
+		{"external bind sources", func(a *ActualAgentState) { a.Sandbox.AllowExternalBindSources = false }},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {

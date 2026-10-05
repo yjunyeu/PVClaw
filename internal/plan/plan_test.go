@@ -24,12 +24,14 @@ func TestFormatIsDeterministic(t *testing.T) {
 		"Purpose: medical\n\n" +
 		"PVClaw\n" +
 		"  Data directory: /tmp/test/agents/medical/data\n" +
+		"  Workspace directory: /tmp/test/agents/medical/workspace\n" +
 		"  Data access: read-only\n\n" +
 		"OpenClaw\n" +
 		"  Sandbox: docker\n" +
 		"  Scope: agent\n" +
+		"  Workspace: /tmp/test/agents/medical/workspace\n" +
 		"  Network: disabled\n" +
-		"  Mount: /tmp/test/agents/medical/data -> /data [ro]\n" +
+		"  Protected data mount: /tmp/test/agents/medical/data -> /data [ro]\n" +
 		"  Browser: disabled\n" +
 		"  Web search: disabled\n" +
 		"  Shell: disabled\n" +

@@ -15,11 +15,13 @@ func Compare(desired compiler.DesiredOpenClawState, actual ActualAgentState) Dif
 		}}}
 	}
 
+	appendChange(&diff, "workspace", desired.Workspace, actual.Workspace, ChangeConfiguration)
 	appendChange(&diff, "sandbox.mode", desired.Sandbox.Mode, actual.Sandbox.Mode, ChangeConfiguration)
 	appendChange(&diff, "sandbox.backend", desired.Sandbox.Backend, actual.Sandbox.Backend, ChangeConfiguration)
 	appendChange(&diff, "sandbox.scope", desired.Sandbox.Scope, actual.Sandbox.Scope, ChangeConfiguration)
 	appendChange(&diff, "sandbox.workspace_access", desired.Sandbox.WorkspaceAccess, actual.Sandbox.WorkspaceAccess, ChangeConfiguration)
 	appendChange(&diff, "sandbox.docker.network", desired.Sandbox.DockerNetwork, actual.Sandbox.DockerNetwork, networkKind(desired.Sandbox.DockerNetwork, actual.Sandbox.DockerNetwork))
+	appendChange(&diff, "sandbox.docker.dangerously_allow_external_bind_sources", boolString(desired.Sandbox.AllowExternalBindSources), boolString(actual.Sandbox.AllowExternalBindSources), boolKind(desired.Sandbox.AllowExternalBindSources, actual.Sandbox.AllowExternalBindSources))
 	appendChange(&diff, "mount./data", formatMount(desired.Mount.Source, desired.Mount.ReadOnly), formatActualMount(actual.Mount), mountKind(desired.Mount, actual.Mount))
 	appendChange(&diff, "sandbox.browser.enabled", boolString(desired.Sandbox.BrowserEnabled), boolString(actual.Sandbox.BrowserEnabled), boolKind(desired.Sandbox.BrowserEnabled, actual.Sandbox.BrowserEnabled))
 	appendChange(&diff, "tools.browser", toolState(desired.Tools.Denied, "browser"), boolToolState(actual.Tools.BrowserDenied), toolKind(desired.Tools.Denied, "browser", actual.Tools.BrowserDenied))

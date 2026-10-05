@@ -116,14 +116,16 @@ func agentPatch(desired compiler.DesiredOpenClawState, existingDenied []string) 
 		"agents": map[string]any{
 			"entries": map[string]any{
 				desired.AgentID: map[string]any{
+					"workspace": desired.Workspace,
 					"sandbox": map[string]any{
 						"mode":            desired.Sandbox.Mode,
 						"backend":         desired.Sandbox.Backend,
 						"scope":           desired.Sandbox.Scope,
 						"workspaceAccess": desired.Sandbox.WorkspaceAccess,
 						"docker": map[string]any{
-							"network": desired.Sandbox.DockerNetwork,
-							"binds":   []string{fmt.Sprintf("%s:%s:%s", desired.Mount.Source, desired.Mount.Target, mode)},
+							"network":                             desired.Sandbox.DockerNetwork,
+							"binds":                               []string{fmt.Sprintf("%s:%s:%s", desired.Mount.Source, desired.Mount.Target, mode)},
+							"dangerouslyAllowExternalBindSources": desired.Sandbox.AllowExternalBindSources,
 						},
 						"browser": map[string]any{"enabled": desired.Sandbox.BrowserEnabled},
 					},
@@ -184,13 +186,15 @@ func extractAgent(config map[string]any, hash, agentID string) ActualAgentState 
 		Exists:     true,
 		AgentID:    agentID,
 		ConfigHash: hash,
+		Workspace:  stringAt(entry, "workspace"),
 		Sandbox: ActualSandboxState{
-			Mode:            stringAt(sandbox, "mode"),
-			Backend:         stringAt(sandbox, "backend"),
-			Scope:           stringAt(sandbox, "scope"),
-			WorkspaceAccess: stringAt(sandbox, "workspaceAccess"),
-			DockerNetwork:   stringAt(docker, "network"),
-			BrowserEnabled:  boolAt(browser, "enabled"),
+			Mode:                     stringAt(sandbox, "mode"),
+			Backend:                  stringAt(sandbox, "backend"),
+			Scope:                    stringAt(sandbox, "scope"),
+			WorkspaceAccess:          stringAt(sandbox, "workspaceAccess"),
+			DockerNetwork:            stringAt(docker, "network"),
+			AllowExternalBindSources: boolAt(docker, "dangerouslyAllowExternalBindSources"),
+			BrowserEnabled:           boolAt(browser, "enabled"),
 		},
 		Mount: findDataMount(stringsAt(docker, "binds")),
 		Tools: ActualToolState{

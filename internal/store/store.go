@@ -19,10 +19,11 @@ const ManagedBy = "pvclaw"
 var ErrAgentExists = errors.New("PVClaw-managed agent already exists")
 
 type Paths struct {
-	AgentDirectory string
-	ProfilePath    string
-	DataDirectory  string
-	StatePath      string
+	AgentDirectory     string
+	ProfilePath        string
+	DataDirectory      string
+	WorkspaceDirectory string
+	StatePath          string
 }
 
 type State struct {
@@ -56,10 +57,11 @@ func (s Store) Paths(agentID string) (Paths, error) {
 		return Paths{}, fmt.Errorf("agent.id: resolves outside PVClaw agents directory")
 	}
 	return Paths{
-		AgentDirectory: agentDirectory,
-		ProfilePath:    filepath.Join(agentDirectory, "profile.yaml"),
-		DataDirectory:  filepath.Join(agentDirectory, "data"),
-		StatePath:      filepath.Join(agentDirectory, "state.json"),
+		AgentDirectory:     agentDirectory,
+		ProfilePath:        filepath.Join(agentDirectory, "profile.yaml"),
+		DataDirectory:      filepath.Join(agentDirectory, "data"),
+		WorkspaceDirectory: filepath.Join(agentDirectory, "workspace"),
+		StatePath:          filepath.Join(agentDirectory, "state.json"),
 	}, nil
 }
 
@@ -84,6 +86,9 @@ func (s Store) Create(agentID, template string) (Paths, error) {
 	}
 	if err := os.MkdirAll(paths.DataDirectory, 0o700); err != nil {
 		return Paths{}, fmt.Errorf("create agent data directory: %w", err)
+	}
+	if err := os.MkdirAll(paths.WorkspaceDirectory, 0o700); err != nil {
+		return Paths{}, fmt.Errorf("create agent workspace directory: %w", err)
 	}
 	if err := os.WriteFile(paths.ProfilePath, contents, 0o600); err != nil {
 		return Paths{}, fmt.Errorf("write profile: %w", err)
